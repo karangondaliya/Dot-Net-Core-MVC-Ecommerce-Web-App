@@ -1,0 +1,30 @@
+﻿@model IEnumerable<Product>
+
+<div class="row pb-3">
+    @foreach (var product in Model)
+    {
+        <div class="col-lg-3 col-sm-6">
+            <div class="row p-2 h-100">
+                <div class="col-12 p-1 h-100">
+                    <div class="card border-0 p-3 shadow border-top border-5 rounded h-100">
+                        <div class="image-container" style="height: 150px; overflow: hidden;">
+                            <img src="@product.ImageUrl" class="card-img-top rounded w-100 h-100" style="object-fit: contain;" />
+                        </div>
+                        <div class="card-body pb-0 d-flex flex-column justify-content-between">
+                            <div class="ps-1" style="min-height">
+                                <p class="card-title h5 text-dark opacity-75 text-center">@product.Name</p>
+                            </div>
+                            <div class="ps-1">
+                                <p class="text-dark opacity-75 text-center">MRP: <span>₹ @product.Price</span></p>
+                            </div>
+                        </div>
+                        <a asp-controller="Home" asp-action="Details" asp-route-id="@product.Id" class="btn btn-primary bg-gradient border-0 form-control">
+                            Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
