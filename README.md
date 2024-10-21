@@ -74,8 +74,6 @@ cd ecommerce-webapp
   </ul>
 
   <h2>Contributers</h2>
- ## Contributors
-
 <table>
   <tr>
     <td align="center">
