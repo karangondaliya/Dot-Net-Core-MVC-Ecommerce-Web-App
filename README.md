@@ -49,15 +49,6 @@ cd ecommerce-webapp
             <pre><code>dotnet restore
             </code></pre>
         </li>
-        <li>Set up the database:
-            <ul>
-                <li>Update the <code>appsettings.json</code> file with your SQL Server connection string.</li>
-                <li>Run the migrations to set up the database schema:
-                    <pre><code>dotnet ef database update
-                    </code></pre>
-                </li>
-            </ul>
-        </li>
         <li>Run the application:
             <pre><code>dotnet run
             </code></pre>
