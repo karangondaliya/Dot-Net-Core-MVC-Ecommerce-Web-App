@@ -72,41 +72,92 @@ namespace EcommerceWebApp.Controllers
 
         [HttpPost]
         [ActionName("Summary")]
-        public IActionResult SummaryPOST()
+        [Authorize]
+        public IActionResult SummaryPOST([FromForm] OrderHeader orderHeader)
         {
-            var claimsIdentity = (ClaimsIdentity)User.Identity;
-            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-
-            ShoppingCartVM.ShoppingCartList = _unitOfWork.ShoppingCart.GetAll(u => u.AppUserId == userId, includeProperties: "Product");
-            ShoppingCartVM.OrderHeader.OrderDate = System.DateTime.Now;
-            ShoppingCartVM.OrderHeader.AppUserId = userId;
-
-            AppUser applicationUser = _unitOfWork.AppUser.Get(u => u.Id == userId);
-
-
-            foreach (var cart in ShoppingCartVM.ShoppingCartList)
+            try
             {
-                cart.Price = cart.Product.Price;
-                ShoppingCartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
-            }
-            ShoppingCartVM.OrderHeader.OrderStatus = SD.StatusPending;
-            _unitOfWork.OrderHeader.Add(ShoppingCartVM.OrderHeader);
-            _unitOfWork.Save();
-            foreach (var cart in ShoppingCartVM.ShoppingCartList)
-            {
-                OrderDetail orderDetail = new()
+                var claimsIdentity = (ClaimsIdentity)User.Identity;
+                var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+
+                // Initialize ShoppingCartVM
+                ShoppingCartVM = new()
                 {
-                    ProductId = cart.ProductId,
-                    OrderHeaderId = ShoppingCartVM.OrderHeader.Id,
-                    Price = cart.Price,
-                    Count = cart.Count
+                    ShoppingCartList = _unitOfWork.ShoppingCart.GetAll(u => u.AppUserId == userId, includeProperties: "Product"),
+                    OrderHeader = orderHeader // Use the posted order header
                 };
-                _unitOfWork.OrderDetail.Add(orderDetail);
-                _unitOfWork.Save();
+
+                // Set user-specific data
+                ShoppingCartVM.OrderHeader.AppUserId = userId;
+                ShoppingCartVM.OrderHeader.OrderDate = DateTime.Now;
+                ShoppingCartVM.OrderHeader.OrderStatus = SD.StatusPending;
+
+                // Validate required fields
+                if (string.IsNullOrEmpty(ShoppingCartVM.OrderHeader.PhoneNumber) ||
+                    string.IsNullOrEmpty(ShoppingCartVM.OrderHeader.HouseName) ||
+                    string.IsNullOrEmpty(ShoppingCartVM.OrderHeader.Address) ||
+                    string.IsNullOrEmpty(ShoppingCartVM.OrderHeader.City) ||
+                    string.IsNullOrEmpty(ShoppingCartVM.OrderHeader.PostalCode) ||
+                    string.IsNullOrEmpty(ShoppingCartVM.OrderHeader.State))
+                {
+                    TempData["Error"] = "Please fill in all required fields.";
+                    return RedirectToAction(nameof(Summary));
+                }
+
+                // Calculate order total
+                ShoppingCartVM.OrderHeader.OrderTotal = 0;
+                foreach (var cart in ShoppingCartVM.ShoppingCartList)
+                {
+                    cart.Price = cart.Product.Price;
+                    ShoppingCartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
+                }
+
+                using (var transaction = _unitOfWork.BeginTransaction())
+                {
+                    try
+                    {
+                        // Save order header
+                        _unitOfWork.OrderHeader.Add(ShoppingCartVM.OrderHeader);
+                        _unitOfWork.Save();
+
+                        // Save order details
+                        foreach (var cart in ShoppingCartVM.ShoppingCartList)
+                        {
+                            OrderDetail orderDetail = new()
+                            {
+                                ProductId = cart.ProductId,
+                                OrderHeaderId = ShoppingCartVM.OrderHeader.Id,
+                                Price = cart.Price,
+                                Count = cart.Count
+                            };
+                            _unitOfWork.OrderDetail.Add(orderDetail);
+                        }
+                        _unitOfWork.Save();
+
+                        // Clear shopping cart
+                        _unitOfWork.ShoppingCart.RemoveRange(ShoppingCartVM.ShoppingCartList);
+                        _unitOfWork.Save();
+
+                        transaction.Commit();
+
+                        // Reset session cart count
+                        HttpContext.Session.SetInt32(SD.SessionCart, 0);
+
+                        return RedirectToAction(nameof(OrderConfirmation), new { id = ShoppingCartVM.OrderHeader.Id });
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        TempData["Error"] = "An error occurred while processing your order. Please try again.";
+                        return RedirectToAction(nameof(Summary));
+                    }
+                }
             }
-
-
-            return RedirectToAction(nameof(OrderConfirmation), new { id = ShoppingCartVM.OrderHeader.Id });
+            catch (Exception ex)
+            {
+                TempData["Error"] = "An error occurred while processing your order. Please try again.";
+                return RedirectToAction(nameof(Summary));
+            }
         }
 
 

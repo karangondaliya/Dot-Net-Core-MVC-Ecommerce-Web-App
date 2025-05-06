@@ -1,5 +1,6 @@
 ﻿using EcommerceWebApp.Data;
 using EcommerceWebApp.Repository.IRepository;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace EcommerceWebApp.Repository
 {
@@ -26,5 +27,10 @@ namespace EcommerceWebApp.Repository
 		{
 			_db.SaveChanges();
 		}
-	}
+
+        public IDbContextTransaction BeginTransaction()
+        {
+            return _db.Database.BeginTransaction();
+        }
+    }
 }

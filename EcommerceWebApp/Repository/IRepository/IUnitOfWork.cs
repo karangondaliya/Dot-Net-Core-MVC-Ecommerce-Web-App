@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Text;
 using System.Linq.Expressions;
 using EcommerceWebApp.Repository.IRepository;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace EcommerceWebApp.Repository.IRepository
 {
@@ -17,5 +18,6 @@ namespace EcommerceWebApp.Repository.IRepository
         IOrderHeaderRepository OrderHeader { get; }
         IOrderDetailRepository OrderDetail { get; }
         void Save();
-	}
+        IDbContextTransaction BeginTransaction();
+    }
 }

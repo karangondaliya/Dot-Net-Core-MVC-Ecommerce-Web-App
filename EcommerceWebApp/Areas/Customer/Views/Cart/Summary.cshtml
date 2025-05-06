@@ -1,5 +1,12 @@
 ﻿@model ShoppingCartVM
 
+@if (TempData["Error"] != null)
+{
+	<div class="alert alert-danger">
+		@TempData["Error"]
+	</div>
+}
+
 <form method="post">
 	<br />
 	<div class="container">
@@ -122,3 +129,20 @@
 		</div>
 	</div>
 </form>
+
+
+@section Scripts {
+	<partial name="_ValidationScriptsPartial" />
+	<script>
+		// Add client-side validation
+		$(document).ready(function () {
+			$('form').submit(function (e) {
+				if (!$(this).valid()) {
+					e.preventDefault();
+					return false;
+				}
+				return true;
+			});
+		});
+	</script>
+}

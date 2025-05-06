@@ -5,6 +5,7 @@ using EcommerceWebApp.Repository.IRepository;
 using Microsoft.AspNetCore.Identity;
 using EcommerceWebApp.Utility;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.Extensions.Logging.AzureAppServices;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +32,14 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
+// Add logging configuration
+builder.Services.AddLogging(logging =>
+{
+    logging.ClearProviders();
+    logging.AddConsole();
+    logging.AddDebug();
+    logging.AddAzureWebAppDiagnostics();
+});
 
 var app = builder.Build();
 
@@ -40,6 +49,26 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+}
+
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        var logger = services.GetRequiredService<ILogger<Program>>();
+
+        logger.LogInformation("Starting database migration...");
+        context.Database.Migrate();
+        logger.LogInformation("Database migration completed successfully.");
+    }
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "An error occurred while migrating the database.");
+// Optionally rethrow if you want the app to fail on migration error
+throw;
 }
 
 app.UseHttpsRedirection();
