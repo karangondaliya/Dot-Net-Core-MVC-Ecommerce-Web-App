@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Product>
+﻿@* @model IEnumerable<Product>
 
 <div class="row pb-3">
     @foreach (var product in Model)
@@ -28,3 +28,77 @@
     }
 </div>
 
+ *@
+
+
+ @model IEnumerable<Product>
+ 
+ <div class="row pb-3">
+ <div class="col-lg-12">
+ <input type="text" id="productSearch" class="form-control mb-3" placeholder="Search
+ for products..." onkeyup="filterProducts()" />
+ </div>
+ </div>
+ 
+ <div class="row pb-3" id="searchResults" style="display: none;">
+ <div class="col-lg-12">
+ <h5>Search Results:</h5>
+ </div>
+ </div>
+
+ <div class="row pb-3" id="productList">
+ @foreach (var product in Model)
+ {
+ <div class="col-lg-3 col-sm-6 product-item">
+ <div class="row p-2 h-100">
+ <div class="col-12 p-1 h-100">
+ <div class="card border-0 p-3 shadow border-top border-5 rounded h-100">
+ <div class="image-container" style="height: 150px; overflow: hidden;">
+ <img src="@product.ImageUrl" class="card-img-top rounded w-100 h-100"
+ style="object-fit: contain;" />
+ </div>
+ <div class="card-body pb-0 d-flex flex-column justify-content-between">
+ <div class="ps-1" style="min-height">
+ <p class="card-title h5 text-dark opacity-75 text-center
+ product-name">@product.Name</p>
+ </div>
+ <div class="ps-1">
+ <p class="text-dark opacity-75 text-center">MRP: <span>₹
+ @product.Price</span></p>
+ </div>
+ </div>
+ <a asp-controller="Home" asp-action="Details" asp-route-id="@product.Id"
+ class="btn btn-primary bg-gradient border-0 form-control">
+ Details
+ </a>
+ </div>
+</div>
+ </div>
+ </div>
+ }
+ </div>
+ <script>
+ function filterProducts() {
+ var input, filter, productList, products, productName, i, txtValue;
+ input = document.getElementById("productSearch");
+ filter = input.value.toLowerCase();
+ productList = document.getElementById("productList");
+ products = productList.getElementsByClassName("product-item");
+ var searchResultsContainer = document.getElementById("searchResults");
+ searchResultsContainer.innerHTML = "";
+ searchResultsContainer.style.display = "none"; // Hide search results if no search query
+ var resultsFound = false;
+ for (i = 0; i < products.length; i++) {
+ productName = products[i].getElementsByClassName("product-name")[0];
+ txtValue = productName.textContent || productName.innerText;
+ if (txtValue.toLowerCase().indexOf(filter) >-1 && filter) {
+ var clonedProduct = products[i].cloneNode(true);
+ searchResultsContainer.appendChild(clonedProduct);
+ resultsFound = true;
+ }
+ }
+ if (resultsFound) {
+ searchResultsContainer.style.display = "flex";
+ }
+ }
+ </script>
